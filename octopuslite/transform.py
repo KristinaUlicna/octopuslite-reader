@@ -5,7 +5,7 @@ import numpy as np
 import skimage.transform as tf
 
 
-from .utils import parse_filename
+#from .utils import parse_filename
 
 
 class StackTransformer:
@@ -17,9 +17,8 @@ class StackTransformer:
         if self.transforms is None:
             return x
 
-        tform = tf.AffineTransform(translation=self.transforms[idx, ...])
-        return tf.warp(x, tform, preserve_range=True)
-
+        tform = tf.AffineTransform(translation=self.transforms[idx, :2, 2])
+        return tf.warp(x, tform, preserve_range=True, order=0)
 
 
 def parse_transforms(path: os.PathLike, n: int) -> StackTransformer:

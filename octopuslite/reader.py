@@ -1,5 +1,4 @@
 import os
-import sys
 import dask
 
 import dask.array as da
@@ -10,13 +9,11 @@ from typing import Union, Optional
 
 from .utils import (
     Channels,
-    estimate_background,
-    estimate_mask,
     parse_filename,
     remove_background,
     remove_outliers,
 )
-from transform import parse_transforms
+from .transform import parse_transforms
 
 
 class DaskOctopusLiteLoader:
@@ -74,6 +71,7 @@ class DaskOctopusLiteLoader:
         self.path = path
         self.filepattern = filepattern
         self._files = {}
+        self._indices = []
         self._lazy_arrays = {}
         self._crop = crop
         self._shape = ()
@@ -83,6 +81,18 @@ class DaskOctopusLiteLoader:
 
         # parse the files
         self._parse_files()
+        # self._list_indices()
+        """
+        print(transforms)
+        print(len(self._files))
+        print(self._files.keys())
+
+        print(list(self._files.keys())[0])
+        print(type(list(self._files.keys())[0]))
+
+        print(len(self._files[Channels.GFP]))
+        print(len(self._files[Channels.GFP]))
+        """
         self._transformer = parse_transforms(
             transforms, len(self._files[Channels.GFP])
         )
@@ -112,11 +122,28 @@ class DaskOctopusLiteLoader:
     def files(self, channel_name: str) -> list:
         return self._files[Channels[channel_name.upper()]]
 
+    def _list_indices(self) -> list:
+        files = self._files[Channels.GFP]
+        # print (files[0])
+        self._indices = [int(f.split('time')[-1].split('_')[0]) for f in files]
+        self._indices.sort()
+        # return self._indices
+
     def _load_and_process(self, fn: str) -> np.ndarray:
         """Load and crop the image."""
         image = io.imread(fn)
 
         t = int(parse_filename(fn, self.filepattern)['time'])
+        """
+        print (fn)
+        print (t)
+        print (self.filepattern)
+        print (parse_filename(fn, self.filepattern))
+        print (parse_filename(fn, self.filepattern).keys())
+        print (parse_filename(fn, self.filepattern)['time'])
+        """
+
+        # t = self._indices.index(t)
         image = self._transformer(image, t)
 
         if self._crop is None:
@@ -126,7 +153,7 @@ class DaskOctopusLiteLoader:
 
         dims = image.ndim
         shape = image.shape
-        dtype = image.dtype
+        # dtype = image.dtype
         crop = np.array(self._crop).astype(np.int64)
 
         # check that we don't exceed any dimensions
@@ -142,7 +169,7 @@ class DaskOctopusLiteLoader:
         cleaned = remove_outliers(image[crops])
 
         if self._remove_background:
-            return remove_background(cleaned) #.astype(dtype)
+            return remove_background(cleaned)  #.astype(dtype)
 
         return cleaned
 
@@ -163,7 +190,7 @@ class DaskOctopusLiteLoader:
         sample = io.imread(files[0])
         self._shape = sample.shape if self._crop is None else self._crop
 
-        channels = {k:[] for k in Channels}
+        channels = {k : [] for k in Channels}
 
         # parse the files
         for f in files:

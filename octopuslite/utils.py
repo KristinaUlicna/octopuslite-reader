@@ -12,7 +12,6 @@ OCTOPUSLITE_FILEPATTERN = (
     "_time(?P<time>[0-9]+)_z(?P<z>[0-9]+)"
 )
 
-
 @enum.unique
 class Channels(enum.Enum):
     BRIGHTFIELD = 0
@@ -20,7 +19,9 @@ class Channels(enum.Enum):
     RFP = 2
     IRFP = 3
     PHASE = 4
-    WEIGHTS = 98
+    COLONY = 90
+    MASK_H = 97
+    MASK_L = 98
     MASK = 99
 
 
@@ -107,7 +108,7 @@ def estimate_background(x: np.ndarray) -> np.ndarray:
     k = np.squeeze(np.array(np.dot(k, np.ravel(x))))
 
     # calculate the surface
-    background_estimate = k[0] + k[1]*u + k[2]*v + k[3]*u*u + k[4]*u*v + k[5]*v*v
+    background_estimate = k[0] + k[1] * u + k[2] * v + k[3] * u * u + k[4] * u * v + k[5] * v * v
     return background_estimate
 
 
